@@ -137,11 +137,80 @@ def fetch_terraform_run_status(api_token, organization, workspace, plan_run_id):
         print("Error occurred during plan API call:")
         print(str(e))
 
+def update_variables(api_token, organization, workspace):
+    # Specify the Terraform Enterprise base URL
+    access_key_base_url = 'https://app.terraform.io/api/v2/workspaces/ws-rHYzeJCNtPxQu12h/vars/var-oX2UUX4hjKcKGkbj'
+    secret_key_base_url = 'https://app.terraform.io/api/v2/workspaces/ws-rHYzeJCNtPxQu12h/vars/var-jAT2XEWb22WP8Hi3'
+    # print(base_url)
+
+    # Set the request headers
+    headers = {
+        'Authorization': f'Bearer {api_token}',
+        'Content-Type': 'application/vnd.api+json'
+    }
+
+    # Set the request body
+    access_key_payload = {
+        "data": {
+          "id":"var-oX2UUX4hjKcKGkbj",
+          "attributes": {
+            "key":"AWS_ACCESS_KEY",
+            "value":"",
+            "description": "new description",
+            "category":"env",
+            "sensitive": "true"
+          },
+        "type":"vars"
+        }
+    }
+
+    secret_key_payload = {
+        "data": {
+          "id":"var-jAT2XEWb22WP8Hi3",
+          "attributes": {
+            "key":"AWS_SECRET_KEY",
+            "value":"test",
+            "description": "new description",
+            "category":"env",
+            "sensitive": "true"
+          },
+        "type":"vars"
+        }
+    }
+
+    try:
+        # Make the API call
+        secret_response = requests.patch(secret_key_base_url, json=secret_key_payload, headers=headers)
+        access_response = requests.patch(access_key_base_url, json=access_key_payload, headers=headers)
+
+        # Check the response status code
+        if secret_response.status_code == 200:
+            # API call was successful
+            # data = response.json()
+            # run_id = data['data']['id']
+            print(f"Secret Keys updated sucessfully")
+        else:
+            # API call failed
+            print(f"Failed to trigger apply. {secret_response.status_code}")
+
+        if access_response.status_code == 200:
+            # API call was successful
+            # data = response.json()
+            # run_id = data['data']['id']
+            print(f"Access Keys updated sucessfully")
+        else:
+            # API call failed
+            print(f"Failed to trigger apply. {access_response.status_code}")
+
+    except requests.exceptions.RequestException as e:
+        print("Error occurred during apply API call:")
+        print(str(e))
+
 def lambda_handler(event, context):
     api_token = "mxlIwma5D0"
     organization = "r-poc"
     workspace = "instancecreation-tfe"
-    
+    update_variables_output = update_variables(api_token, organization, workspace)
     plan_run_id = trigger_terraform_plan(api_token, organization, workspace)
     
     run_status = fetch_terraform_run_status(api_token, organization, workspace, plan_run_id)
